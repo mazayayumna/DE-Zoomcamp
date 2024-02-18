@@ -1,2 +1,2 @@
 # DE-Zoomcamp
-My learning thru DE Zoomcamp
+My learning thru Data Engineering Zoomcamp
