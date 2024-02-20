@@ -59,3 +59,31 @@ localhost:8080
 SELECT * FROM public.yellow_taxi_data LIMIT 100
 SELECT COUNT(1) FROM yellow_taxi_data
 ```
+
+Using python script to ingest data instead of notebook + dockerizing
+```
+URL = "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz"
+
+# DO NOT FORGET to create network first (read last step)
+python ingest_data.py \
+    --user=root \
+    --password=root \
+    --host=localhost \
+    --port=5432 \
+    --db=ny_taxi \
+    --table_name=yellow_taxi_trips \
+    --url=${URL}
+
+docker build -t taxi_ingest:v001 .
+
+docker run -it \
+    --network=pg-network \
+    taxi_ingest:v001 \
+        --user=root \
+        --password=root \
+        --host=pg-database \
+        --port=5432 \
+        --db=ny_taxi \
+        --table_name=yellow_taxi_trips \
+        --url=${URL}
+```
