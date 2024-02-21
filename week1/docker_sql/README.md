@@ -87,3 +87,10 @@ docker run -it \
         --table_name=yellow_taxi_trips \
         --url=${URL}
 ```
+
+Replacing pgAdmin and Postgre docker with Docker-Compose (yaml)
+```
+docker-compose up       #turn on
+docker-compose down     #turn off
+docker-compose up -f    #turn off
+```
