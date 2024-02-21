@@ -94,3 +94,98 @@ docker-compose up       #turn on
 docker-compose down     #turn off
 docker-compose up -f    #turn off
 ```
+
+SQL Refresher
+```
+# join yellow taxi and zones tables 1
+# to know the yellow taxi location zone with zones tables 
+SELECT
+	tpep_pickup_datetime,
+	tpep_dropoff_datetime,
+	total_amount,
+	CONCAT(zpu."Borough", '/', zpu."Zone") AS "pickup_loc", #ex: Manhattan/Central Park
+	CONCAT(zdo."Borough", '/', zdo."Zone") AS "dropoff_loc"
+FROM 
+	yellow_taxi_trips t,
+	zones zpu,
+	zones zdo
+WHERE
+	t."PULocationID" = zpu."LocationID" AND t."DOLocationID" = zdo."LocationID"
+LIMIT 100
+
+# join yellow taxi and zones tables 2
+# to know the yellow taxi location zone with zones tables 
+SELECT
+	tpep_pickup_datetime,
+	tpep_dropoff_datetime,
+	total_amount,
+	CONCAT(zpu."Borough", '/', zpu."Zone") AS "pickup_loc",
+	CONCAT(zdo."Borough", '/', zdo."Zone") AS "dropoff_loc"
+FROM 
+	yellow_taxi_trips t JOIN zones zpu
+		ON t."PULocationID" = zpu."LocationID"
+	JOIN zones zdo
+		ON t."DOLocationID" = zdo."LocationID"
+LIMIT 100
+
+# checking locationID in yellow_taxi present in zones
+SELECT
+	tpep_pickup_datetime,
+	tpep_dropoff_datetime,
+	total_amount,
+	"PULocationID",
+	"DOLocationID"
+FROM 
+	yellow_taxi_trips t
+WHERE
+	-- "DOLocationID" is NULL
+	"PULocationID" NOT IN (SELECT "LocationID" FROM zones)
+LIMIT 100
+
+# delete 142 from zones locaionID
+DELETE FROM zones WHERE "LocationID" = 142
+
+# using LEFT JOIN (yellow_taxi) to still show 142 with empty zone (..) instead of not showing it
+SELECT
+	tpep_pickup_datetime,
+	tpep_dropoff_datetime,
+	total_amount,
+	CONCAT(zpu."Borough", '/', zpu."Zone") AS "pickup_loc",
+	CONCAT(zdo."Borough", '/', zdo."Zone") AS "dropoff_loc"
+FROM 
+	yellow_taxi_trips t LEFT JOIN zones zpu
+		ON t."PULocationID" = zpu."LocationID"
+	LEFT JOIN zones zdo
+		ON t."DOLocationID" = zdo."LocationID"
+LIMIT 100
+
+# order date and see which date is more busy with order by
+SELECT
+	CAST(tpep_dropoff_datetime AS DATE) as "day",
+	COUNT(1) as "count"
+    MAX(total_amount),
+	MAX(passenger_count)
+FROM 
+	yellow_taxi_trips t
+GROUP BY
+	CAST(tpep_dropoff_datetime AS DATE)
+-- ORDER BY "day" ASC
+ORDER BY "count" DESC
+
+# grouping by multiple fields
+SELECT
+	CAST(tpep_dropoff_datetime AS DATE) as "day",
+	"DOLocationID",
+	COUNT(1) as "count",
+	MAX(total_amount),
+	MAX(passenger_count)
+FROM 
+	yellow_taxi_trips t
+GROUP BY
+    -- day and "DOLocationID"!
+	1,2
+ORDER BY 
+	"day" ASC,
+	"DOLocationID" ASC
+
+```
