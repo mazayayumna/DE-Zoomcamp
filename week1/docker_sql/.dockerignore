@@ -2,3 +2,4 @@ ny_taxi_postgres_data/
 2020_Yellow_Taxi_Trip_Data.csv
 2020_yellow_taxi.csv
 output.csv
+taxi_zone_lookup.csv
