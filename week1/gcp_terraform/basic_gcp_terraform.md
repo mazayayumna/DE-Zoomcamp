@@ -15,3 +15,6 @@ terraform plan
 terraform apply
 terraform destroy
 ```
+
+## Terraform variables
+make a variables script, start from terraform plan 
