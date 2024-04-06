@@ -65,7 +65,7 @@ x-airflow-common:
     GCP_PROJECT_ID: 'ny-rides-mazaya'
     GCP_GCS_BUCKET: 'data-lake_ny-rides-mazaya'
   volumes:
-    - ./dags:/opt/airflow/dags
+    - ./dags_new:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - {dir to googlecred.json}:/.google/credentials:ro
