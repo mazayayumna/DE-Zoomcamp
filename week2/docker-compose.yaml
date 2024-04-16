@@ -65,10 +65,10 @@ x-airflow-common:
     GCP_PROJECT_ID: 'ny-rides-mazaya'
     GCP_GCS_BUCKET: 'data-lake_ny-rides-mazaya'
   volumes:
-    - ./dags_new:/opt/airflow/dags
+    - ./dags_new/:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
-    - {dir to googlecred.json}:/.google/credentials:ro
+    - /home/mazaya/Documents/coursera/DE-Zoomcamp/week2/:/.google/credentials:ro
 
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
