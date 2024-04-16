@@ -68,7 +68,7 @@ x-airflow-common:
     - ./dags_new/:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
-    - /home/mazaya/Documents/coursera/DE-Zoomcamp/week2/:/.google/credentials:ro
+    - $(dir to googlecred.json):/.google/credentials:ro
 
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
