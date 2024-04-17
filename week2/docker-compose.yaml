@@ -64,11 +64,20 @@ x-airflow-common:
     # TODO: Please change GCP_PROJECT_ID & GCP_GCS_BUCKET, as per your config
     GCP_PROJECT_ID: 'ny-rides-mazaya'
     GCP_GCS_BUCKET: 'data-lake_ny-rides-mazaya'
+
+    # NEW! : full ingesting
+    PG_HOST: "${PG_HOST}"
+    PG_USER: "${PG_USER}"
+    PG_PASSWORD: "${PG_PASSWORD}"
+    PG_PORT: "${PG_PORT}"
+    PG_DATABASE: "${PG_DATABASE}"
+    # NEW! : full ingesting
+    
   volumes:
     - ./dags_new/:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
-    - $(dir to googlecred.json):/.google/credentials:ro
+    - /home/mazaya/Documents/coursera/DE-Zoomcamp/week2/:/.google/credentials:ro
 
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
