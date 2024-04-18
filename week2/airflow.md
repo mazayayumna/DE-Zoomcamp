@@ -10,7 +10,7 @@ docker-compose down --volumes --rmi all
 docker-compose up airflow-init
 docker-compose up
 ```
-## Settings
+## Run and ingest to GCS and BigQuery
 1) open localhost:8080 in web browser
 2) airflow;airflow with docker ps execute CONTAINER ID of scheduler
 ```
@@ -23,7 +23,7 @@ ls
 
 
 
-# New!: Full Ingesting
+# New!: Full Ingesting to local postgre
 ## getting started
 1) make new folder and file dags_new/data_ingestion_local.py
 2) write full code from scracth, test it with localhost:8080
