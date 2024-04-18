@@ -4,6 +4,7 @@
 ```
 cd DE-Zoomcamp/week2/data-engineering-zoomcamp/cohorts/2022/week_2_data_ingestion/airflow
 echo -e "AIRFLOW_UID=$(id -u)" > .env
+# START FROM THIS!
 docker-compose build
 # change docker-compose.yaml (delete flower, celery, redis, etc)
 docker-compose down --volumes --rmi all
