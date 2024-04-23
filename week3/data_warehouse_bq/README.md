@@ -139,3 +139,36 @@ WHERE DATE(tpep_pickup_datetime) BETWEEN '2019-06-01' AND '2020-12-31'
 ```
 * Query to partitioned and clustered data.
 * This will process about 865MB of data.
+
+## Partitioning vs Clustering
+
+We may combine both partitioning and clustering in a table, but there are important differences between both techniques:
+| Clustering | Partitioning |
+|---|---|
+| Cost benefit unknown. BQ cannot estimate the reduction in cost before running a query. | Cost known upfront. BQ can estimate the amount of data to be processed before running a query. |
+| High granularity. Multiple criteria can be used to sort the table. | Low granularity. Only a single column can be used to partition the table. |
+| Clusters are "fixed in place". | Partitions can be added, deleted, modified or even moved between storage options. |
+| Benefits from queries that commonly use filters or aggregation against multiple particular columns. | Benefits when you filter or aggregate on a single column. |
+| Unlimited amount of clusters; useful when the cardinality of the number of values in a column or group of columns is large. | Limited to 4000 partitions; cannot be used in columns with larger cardinality. |
+
+## Best practices
+* Cost reduction
+  * Avoid `SELECT *` . Reducing the amount of columns to display will drastically reduce the amount of processed data and lower costs.
+  * Price your queries before running them.
+  * Use clustered and/or partitioned tables if possible.
+  * Use [streaming inserts](https://cloud.google.com/bigquery/streaming-data-into-bigquery) with caution. They can easily increase cost.
+  * [Materialize query results](https://cloud.google.com/bigquery/docs/materialized-views-intro) in different stages.
+* Query performance
+  * Filter on partitioned columns.
+  * [Denormalize data](https://cloud.google.com/blog/topics/developers-practitioners/bigquery-explained-working-joins-nested-repeated-data).
+  * Use [nested or repeated columns](https://cloud.google.com/blog/topics/developers-practitioners/bigquery-explained-working-joins-nested-repeated-data).
+  * Use external data sources appropiately. Constantly reading data from a bucket may incur in additional costs and has worse performance.
+  * Reduce data before using a `JOIN`.
+  * Do not threat `WITH` clauses as [prepared statements](https://www.wikiwand.com/en/Prepared_statement).
+  * Avoid [oversharding tables](https://cloud.google.com/bigquery/docs/partitioned-tables#dt_partition_shard).
+  * Avoid JavaScript user-defined functions.
+  * Use [approximate aggregation functions](https://cloud.google.com/bigquery/docs/reference/standard-sql/approximate_aggregate_functions) rather than complete ones such as [HyperLogLog++](https://cloud.google.com/bigquery/docs/reference/standard-sql/hll_functions).
+  * Order statements should be the last part of the query.
+  * [Optimize join patterns](https://cloud.google.com/bigquery/docs/best-practices-performance-compute#optimize_your_join_patterns).
+  * Place the table with the _largest_ number of rows first, followed by the table with the _fewest_ rows, and then place the remaining tables by decreasing size.
+    * This is due to how BigQuery works internally: the first table will be distributed evenly and the second table will be broadcasted to all the nodes.
