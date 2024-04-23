@@ -1,5 +1,5 @@
 # BigQuery Machine Learning
-![bq_ml](week3/BQ_ML.png)
+![bq_ml](BQ_ML.png)
 
 ## Extract model
 See and run big_query_ml.sql first in bigquery.
