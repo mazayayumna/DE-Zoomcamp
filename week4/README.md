@@ -1,5 +1,15 @@
 # Intro to Analytics Engineering
 
+## Prerequisites
+1. Have BigQuery or Postgres
+2. Completed week3
+3. Datasets > I use Bigquery to create this dataset to save time
+    * Yellow taxi data - 2019 and 2020
+    * Green taxi data - 2019 and 2020
+    * fhv data - 2019
+    ***go to taxi_rides_ny/analyses/hack-load-data.sql***
+    ***fhv is homework***
+
 ## What is Analytics Engineering?
 ### Roles
 1. Data Engineer prepares and maintains the infrastructure the data team needs.
@@ -47,3 +57,37 @@ dbt has 2 main components: _dbt Core_ and _dbt Cloud_:
     * Intregrated documentation.
     * Free for individuals (one developer seat).
 For integration with BigQuery, use dbt Cloud IDE, so a local installation of dbt core isn't required. For developing locally, use dbt Core + local Postgres database, which can be installed locally and connected to Postgres and run models through the CLI.
+
+# Starting dbt
+1. Make account and login in dbt Cloud
+2. Connect json from GCP project and also github
+3. Select github directory and sub directory (account setting > project > edit)
+4. Back to Cloud IDE, click ***Initialize..***
+5. then click ***commit and sync***, it will create a new branch, just PR and merged.
+
+# Developing dbt
+## Anatomy of dbt model
+Raw Data > Develop > Test&Document > Deploy > Dataset > BI Tools/ML Model/Analytics.
+We're exploring **Develop** and **Test&Document**.
+
+***dbt model***
+```
+{{
+    config(materialized='table')
+}}
+
+SELECT *
+FROM staging.source_table
+WHERE record_state = 'ACTIVE'
+```
+***compiled code***
+```
+CREATE TABLE my_schema.my_model AS (
+    SELECT *
+    FROM staging.source_table
+    WHERE record_state = 'ACTIVE'
+)
+```
+### Materialization in dbt Cloud
+![materialization](dbt-materialization.png)
+
