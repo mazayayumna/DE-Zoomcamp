@@ -167,7 +167,7 @@ vars:
 ```
 * As CLI when building or running your project
 ```
---dbt build --m <your-model.sql> --var 'is_test_run: false'
+--dbt build --m <your-model.sql> --var 'is_test_run': false
 {% if var('is_test_run', default=true) %}
 
     limit 100
@@ -247,7 +247,10 @@ End to end workflow be like:
 
 **Steps:**
 1) In header, click deploy > environment > create environment for production (datase: prod)
-2) Click Create job > Deploy job > Fill the job settings > Select docs on run and source freshness
+2) Click Create job > Deploy job > Fill the job settings > Select docs on run and source freshness > edit the build so can build full rows to:
+```
+dbt build --vars '{'is_test_run': false}'
+```
 3) Can schedule hours > 12 > exc Sat and Sun > and Save
 4) Make sure to merge to Main branch first.
 5) Also can run with API if we use like Airflow that load fresh data to our BigQuery that will trigger the dbt run.
