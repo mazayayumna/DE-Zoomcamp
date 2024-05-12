@@ -5,7 +5,7 @@ models:
   - name: dim_zones
     description: >
       List of unique zones idefied by locationid. 
-      Includes the service zone they correspond to (Green or yellow).
+      Includes the service zone they correspond to (Green or Yellow).
 
   - name: dm_monthly_zone_revenue
     description: >
