@@ -189,7 +189,7 @@ FROM {{ ref('taxi_zone_lookup) }}
 ```
 If you build the seed, it can appear in BigQuery under the same folder.
 
-## Referecing other model
+## Referencing other model
 Making `fact_trips.sql` that depends on its child models
 ![referencing_models](ref_model.png)
 This `fact_trips.sql` actually do union for all these 3 models before (note: dim_zones is from seed), so this is how to run this kind of model:
@@ -197,3 +197,7 @@ This `fact_trips.sql` actually do union for all these 3 models before (note: dim
 -- build +model+ (up/downstream)
 dbt build --select +fact_trips+
 ```
+
+# Testing and Developing dbt model
+## Testing
+* testing is essentially a `select` sql query
