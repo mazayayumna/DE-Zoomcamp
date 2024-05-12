@@ -200,4 +200,64 @@ dbt build --select +fact_trips+
 
 # Testing and Developing dbt model
 ## Testing
-* testing is essentially a `select` sql query
+* testing is essentially a `select` sql query and defined in .yml file
+* dbt provides basic test to check if the columns are:
+    1. Unique
+    2. Not null
+    3. Accepted values
+    4. A foreign key to another tables
+* But we can create customs tests as queries
+
+**Steps:**
+1) create a model under `core/dm_monthly_zone_revenue.sql` to calculate revenue each month. It uses macro `dbt.date_trunc`.
+2) add `dbt.codegen` to packages.yml that is to generate code (ex: yaml of the model). Run `dbt deps` to install package.
+3) compile this code and put the result into into schema.yml, can also copy from DEZC GitHub, dont forget to alter dbt_project.yml for variable or seeds.
+```
+{% set models_to_generate = codegen.get_models(directory='staging', prefix='stg') %}
+{{ codegen.generate_model_yaml(
+    model_names = models_to_generate
+) }}
+```
+4) run `dbt build` for full tests.
+
+## Documentation
+dbt provides a way to geneare documentation and render it as a website. It includes:
+* Project info (model code, sources, descriptions, and tests)
+* DWH info (column name, column dtype, table size, table rows)
+
+**Steps:**
+1) compile this code and copy the result for new `schema.yml` under core model
+```
+{% set models_to_generate = codegen.get_models(directory='core') %}
+{{ codegen.generate_model_yaml(
+    model_names = models_to_generate
+) }}
+```
+2) Also can take from DEZC GitHub, then run
+```
+dbt docs generate
+```
+
+# Deployment
+End to end workflow be like:
+1) Develop in user branch
+2) Open PR to merge into the main branch, merge
+3) Run the new models in the production env using the main branch
+4) Schedule the models
+
+**Steps:**
+1) In header, click deploy > environment > create environment for production (datase: prod)
+2) Click Create job > Deploy job > Fill the job settings > Select docs on run and source freshness
+3) Can schedule hours > 12 > exc Sat and Sun > and Save
+4) Make sure to merge to Main branch first.
+5) Also can run with API if we use like Airflow that load fresh data to our BigQuery that will trigger the dbt run.
+6) Run it manually until finished. After that we can see our json metadata under artifacts, commit under Commit SHA, and Documentation too.
+
+## Continuous Integration (CI)
+CI is practice of regularly merge development branches after which automated builds and tests are run. Dbt allows us to enable CI on PR via webhooks from GitHub, when PR is ready to merged a webhooks will enqueue a new run of the specified job.
+The run of the CI job will be against a temp schema and no PR will be able to be merged unless the run has been completed successfully.
+
+**Steps:**
+1) Click Deploy > Jobs > Create job > CI job > Fill in job settings that triggered by PR
+2) Also can add or change advanced settings. > Save
+3) make changes to the script > commit > create PR > you can see dbt Cloud in PR trigger a run > it should be pass first (can see details) before merging.
