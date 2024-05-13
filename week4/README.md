@@ -267,7 +267,7 @@ The run of the CI job will be against a temp schema and no PR will be able to be
 
 # Visualization with Looker Studio
 ### First step
-1) Make a new report and connect the data from other source (BigQuery)
+1) Login google acoount to Looker Studio, make a new report and connect the data from other source (BigQuery)
 2) Select the table that you want
 3) Delete existing table and start it fresh
 4) Choose chart > std time series one (then you can see their suggestion on the right side)
@@ -293,3 +293,4 @@ YEAR(pickup_datetime)
 ### Last step
 1) Add Drop Down List with Control > Choose `service_type` as Control Field > Can see graphs for only Yellow or Green
 2) Add dashboard title and View, this is the final look:
+![visualizing_ny_trips](visualizing_ny_trips.jpg)
