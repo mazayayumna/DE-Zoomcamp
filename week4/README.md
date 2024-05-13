@@ -256,7 +256,7 @@ dbt build --vars '{'is_test_run': false}'
 5) Also can run with API if we use like Airflow that load fresh data to our BigQuery that will trigger the dbt run.
 6) Run it manually until finished. After that we can see our json metadata under artifacts, commit under Commit SHA, and Documentation too.
 
-## Continuous Integration (CI)
+### Continuous Integration (CI)
 CI is practice of regularly merge development branches after which automated builds and tests are run. Dbt allows us to enable CI on PR via webhooks from GitHub, when PR is ready to merged a webhooks will enqueue a new run of the specified job.
 The run of the CI job will be against a temp schema and no PR will be able to be merged unless the run has been completed successfully.
 
@@ -264,3 +264,32 @@ The run of the CI job will be against a temp schema and no PR will be able to be
 1) Click Deploy > Jobs > Create job > CI job > Fill in job settings that triggered by PR
 2) Also can add or change advanced settings. > Save
 3) make changes to the script > commit > create PR > you can see dbt Cloud in PR trigger a run > it should be pass first (can see details) before merging.
+
+# Visualization with Looker Studio
+### First step
+1) Make a new report and connect the data from other source (BigQuery)
+2) Select the table that you want
+3) Delete existing table and start it fresh
+4) Choose chart > std time series one (then you can see their suggestion on the right side)
+5) Dimension = pickup datetime, Breakdown Dimension = service_type
+### Second step
+1) There's date outlier, on right (Penyiapan) or Control > add Default Date Range > Fixed Jan 2019-Dec 2020 (DO NOT CHOOSE YEAR! USE ARROW TO MOVE CALENDAR MONTH COS ITS SO SLOW!)
+2) Add border to the graph > Add text as Title
+3) Add another graph (score card) > delete Date Range Dimension > Add title
+4) Add another graph (pie) > It would automatically detect service type over the date range > add Title
+5) Add another graph (table with heatmap) > add Pickup Zone as Dimension (can see top 10 record per zone)
+### Third step
+1) Add another graph (stack bar) to view records per month (can leave pickup datetime as it is)
+2) Look below, add a field > column name is 'pickup_month > then add formula: save and done
+```
+MONTH(pickup_datetime)
+```
+3) Add `pickup_month` as a new Dimension > Create new field to see it also based on Year `pickup_year`
+```
+YEAR(pickup_datetime)
+```
+4) add `pickup_year` year as a new Breakdown Dimension
+5) Sort by `pickup_month` Ascending > changed it to Stacked Bar > add Title
+### Last step
+1) Add Drop Down List with Control > Choose `service_type` as Control Field > Can see graphs for only Yellow or Green
+2) Add dashboard title and View, this is the final look:
