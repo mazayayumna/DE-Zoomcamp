@@ -7,10 +7,12 @@ Advantages:
 * Scale of process
 Disadvantage:
 * Delay
+
 ***Technologies***: Python script, SQL, Spark, Flink.
 
 ### What is Spark
 Spark is a data processing engine, it was written with Scala but with Python can use Pypark. It has cluster that contains machines that could process data and run jobs from data in Data Lake (ex. csv in s3 or GCS) and upload it again to the Data Lake.
+
 ***When to use Spark:***
 * Typical process would be process data in DWH to DWH, it can be done in SQL tho with tools like Hive and Presto/Athena.
 * But, if you can express your batch jobs as SQL, we should use Spark. 
