@@ -181,3 +181,16 @@ In this step we will create a Pyspark version of week4 script `dm_monthly_zone_r
 5) combine both DF with `union` and register the DataFrame into a table, in order for SQL can read that.
 6) Then, the main function with SQL to get total revenue for each *service type* (yellow, green) for each *month* and for each *revenue location*.
 7) Finally, save the table to Parquet without partition (only 1 file using coalesce)
+
+
+# Spark Internals
+### Spark Cluster
+Cluster is local [*] if you see when you start Spark session.
+
+**Cluster executor**
+* We write code and have a driver that submit a job (ex. Airflow task, dags, PC).
+* Then driver submit the job to Cluster (this is like an office), we give it to master (4040), then who will do the jobs are executors. So, master is the leaders who submit jobs to the executors.
+* Executor do pull data from Cloud, then process data (ex. DataFrame with partitions). One executor process one partition and save the data somewhere like S3 or GCS.
+> previously ppl use Hadoop/HDFS where the data stored inside each executor (yes, it increase redundancy). But now even large files is no problem since Spark Cluster and Cloud Storage is in the same data center.
+
+### GroupBy in Spark
