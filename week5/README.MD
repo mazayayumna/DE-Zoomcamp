@@ -155,10 +155,10 @@ df.select('pickup_datetime', 'dropoff_datetime', 'PULocationID', 'DOLocationID')
 
 ### Preparing Yellow and Green Taxi Data
 ***Steps***:
-1) Make a bash script to automatically download trip data each year and month `download_data.sh`, run with:
+1) Make a bash script to automatically download trip data each year and month `download_trip_data.sh`, run with:
 ```
-chmod +x download_data.sh
-./download_data.sh yellow 2020 #yellow,green,2020,2021
+chmod +x download_trip_data.sh
+./download_trip_data.sh yellow 2020 #yellow,green,2020,2021
 ```
 2) can see downloaded structure with `tree`
 ```
