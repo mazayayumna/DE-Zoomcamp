@@ -167,6 +167,7 @@ tree data
 3) Make a new notebook `3_taxi_schema` import spark session and specify schema for each column datatypes with Spark.
 4) For each taxi type (yellow, green) and year (2020, 2021). Read the dataframe with Spark, with specified schema (dtype)
 5) For each taxi type (yellow, green) and year (2020, 2021). Do partition to 4 and convert them into .parquet file.
+6) save to `data/pq/{taxi_type}/{year}/{month}`.
 
 
 ### SQL with Spark
@@ -184,7 +185,7 @@ In this step we will create a Pyspark version of week4 script `dm_monthly_zone_r
 
 
 # Spark Internals
-### Spark Cluster
+## Spark Cluster
 Cluster is local [*] if you see when you start Spark session.
 
 **Cluster executor**
@@ -193,4 +194,136 @@ Cluster is local [*] if you see when you start Spark session.
 * Executor do pull data from Cloud, then process data (ex. DataFrame with partitions). One executor process one partition and save the data somewhere like S3 or GCS.
 > previously ppl use Hadoop/HDFS where the data stored inside each executor (yes, it increase redundancy). But now even large files is no problem since Spark Cluster and Cloud Storage is in the same data center.
 
-### GroupBy in Spark
+## GroupBy in Spark
+this part we will see how to do GroupBy with Spark
+
+***Steps***:
+1) make a new notebook `5_groupby_join` and as usual to import and start the session.
+2) Read the parquet we had before in `data/pq/{taxi_type}/{year}/{month}` with Spark and register them into tables.
+3) Make an SQL function for each Yellow and Green DataFrame, can see read logic below in `SQL Function` section.
+4) From the result of the function before, we repartition it into 20 files parquet files for each taxi type.
+5) Command if you want to see hows the data inside
+```
+df_green_revenue.take(5) #take first 5 rows in tuple
+df_green_revenue.show()  #show first 20 DataFrame
+```
+6) Save it into `data/report/revenue/{taxi_type}`.
+
+### SQL Function
+```
+SELECT 
+    date_trunc('hour', pickup_datetime) AS hour, 
+    PULocationID AS zone,
+
+    SUM(total_amount) AS amount,
+    COUNT(1) AS number_records
+FROM
+    green or yellow
+WHERE
+    lpep_pickup_datetime >= '2020-01-01 00:00:00'
+GROUP BY
+    1, 2
+```
+It literally read hour from `pickup_datetime` and also zone from `PULocationID` (this one is Integer). Also has function to calculate the total amount (we already sum this before eg. fare, tip, etc) and count how many records or rows number we have from each **Hour and Zone, aka Key**, this one is where GroupBy takes place.
+Also we select where `pickup_datetime` occurs from Jan 1st, 2020 cos this dataset is from 2020 and 2021.
+
+If you see `local:4040` Spark, the job diagram, it will have 2 stages:
+1) S1: preparation with GroupBy
+For each partition, it comes to executors (GroupBy) and output are subresults.
+>[[H1,Z1,100,5],[H1,Z2,200,10]],[[H1,Z1,50,2],[H1,Z2,250,12]],[[H3,Z1,200,10]]
+
+2) S2: reshuffling
+Shuffles the records we have in each partition (subresults). **Key** would be sumthing like *H1,Z1*, **value** would be *100,50*.
+> p1 = [[H1,Z1,100,5],[H1,Z1,50,2],[H3,Z1,200,10]] and p2 = [[H1,Z2,200,10],[H1,Z2,250,12]]. Value would be [350,17] and [450,22].
+> We want to reshuffle data as little as possible as its expensive. Plus, if you add OrderBy too, it will become 3 stages, fyi.
+
+
+## Join in Spark
+This is join in Spark.
+* join large tables: btw if we use this Join after GroupBy before, stages in Spark would be 3, with an additional reshuffle stage to do external merge sort.
+add photo
+
+* join large and small table: no additional reshuffle as the small table (eg. zones) was sent and stay inside the executors.
+add photo
+
+### Join two large tables
+this part we will see how to Join yellow revenue and green revenue before with Spark. Output will be like: [hour, zone, revenue yellow, records yellow, revenue green, records green]
+***Steps***:
+1) Read parquet files before from `data/report/revenue/{taxi_type}`.
+2) Rename columns `amount` to `{taxi_type}_amount` and `number_records` to `{taxi_type}_number`.
+3) Join Green and Yellow Spark DataFrame on hour and zone (key). Also we use `outer` to just display Null if we have records that is in Green but not in Yellow, vice versa. So records still show even sometimes we have null in the column either from Yellow or Green.
+4) Save joined dataframe to parquet in `data/report/revenue/total`. It will be like this
+```
+DataFrame[hour: timestamp, zone: int, green_amount: double, green_number_records: bigint, yellow_amount: double, yellow_number_records: bigint]
+```
+
+### Join large table + small table
+this part we will see how to Join joined revenue before with zone table before with Spark. Zone be like:
+```
+DataFrame[LocationID: string, Borough: string, Zone: string, service_zone: string]
+```
+***Steps***:
+1) Read the parquet zone and I rename column Zone to `detailed_zone` to avoid confusion between both table.
+2) Join both DataFrame if `joined.zone == zones.LocationID`, this is because `zone` in joined revenue is basically `locationID` in zones, they are both number.
+3) After that drop both LocationID and Zone as they are number and we already know the actual zone with `detailed_zone`. Rows after join both be like this:
+```
+Row(hour=datetime.datetime(2020, 1, 1, 0, 0), green_amount=None, green_number_records=None, yellow_amount=8.8, yellow_number_records=1, Borough='Brooklyn', detailed_zone='Bay Ridge', service_zone='Boro Zone')
+```
+
+
+# Resilient Distributed Dataset (RDD)
+RDD is a low level logic and not so popular these days, its the bottom of Spark DataFrame so we can enjoy nice API and functions. It has several operations like: `map, filter, reduceByKey, mapFilter, and RDD to DF (DF to RDD)`. We use green taxi dataset in parquet this time `data/pq/green/*/*` (df_green).
+
+### Intro to RDD Steps:
+***Steps***:
+1) make a new notebook `6_rdds`. Import as usual.
+
+2) `DF to RDD`: read the parquet with Spark DF, select columns, and turn it into RDD or `rdd`.
+
+3) `filter`: make function `filter_outliers` to filter date before 2020. Like:
+```
+Row(lpep_pickup_datetime=datetime.datetime(2020, 1, 23, 13, 10, 15), PULocationID=74, total_amount=44.97)
+```
+It is a function that return either True or False.
+
+4) `map`: add function `prepare_for_grouping` to group values to (key, value) aka ((hour.zone),(amount,count)). Count from 1.
+map is a function that applied to every element or rows of the RDD (not partition).
+
+5) `reduceByKey`: add function `calculate_revenue` to calc revenue aka amount and also count. As example: [(key1, val1),(key1, val2),(key1, val3),(key2, val1),(key2,val2)] to [(key1, val1, val2, val3)] and [(key2, val1, val2)]
+> (key, value) - reduce - (key, reduced-value)
+
+6) another `map`: is a function named `unwrap` just how to clean the the position of the row into ((hour,zone)(revenue,count))
+
+7) Dont forget to specify the datatypes of the column (timestamp, int, double)
+
+8) `RDD to DF`: function named `toDF`. 
+
+9) This is how the full RDD operations take place:
+```
+df_result = rdd \
+    .filter(filter_outliers) \
+    .map(prepare_for_grouping) \
+    .reduceByKey(calculate_revenue) \
+    .map(unwrap) \
+    .toDF(result_schema)
+```
+
+10) This is how the output looks like, and write the result to `tmp/green-revenue`:
+```
+Row(hour=datetime.datetime(2020, 1, 20, 15, 0), zone=67, revenue=79.5, count=3)
+```
+
+### RDD mapPartition:
+MapPartition is like map, but it is a function that process not whole but per part. This is suitable for like Machine Learning when sometimes prediction will only take 1 part instead of whole, if the file is big like (ex 1TB, partition 100MB)
+> RDD partition - mapPartition - RDD Partition
+
+***Steps***:
+1) take the previous Spark DF df_green, select some columns, and turn the DataFrame to RDD, take 10 rows, then turn it again to pandas DF.
+> this shows how it easy to switch between RDD, pandas DF, spark DF
+
+2) Make a function `model_predict` that predicts the duration of a trip from the trip distance (ex duration = distance*5)
+
+3) Make a function `apply_model_in_batch` to apply prev model per batch. The `pd.DataFrame` materializes the entire DataFrame in memory. The `yield row` write each row to the resulting RDD and then it will flatten in the end.
+
+4) Turn the result to Spark DF and drop column named `index`. Then we can see the predicted duration.
+> note: our partition is not super balanced and repartitioning is an expensive operation.
