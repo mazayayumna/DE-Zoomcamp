@@ -241,10 +241,10 @@ Shuffles the records we have in each partition (subresults). **Key** would be su
 ## Join in Spark
 This is join in Spark.
 * join large tables: btw if we use this Join after GroupBy before, stages in Spark would be 3, with an additional reshuffle stage to do external merge sort.
-add photo
+![join_large_tab](join_large_tab.jpg)
 
 * join large and small table: no additional reshuffle as the small table (eg. zones) was sent and stay inside the executors.
-add photo
+![join_small_tab](join_smol_tab.jpg)
 
 ### Join two large tables
 this part we will see how to Join yellow revenue and green revenue before with Spark. Output will be like: [hour, zone, revenue yellow, records yellow, revenue green, records green]
