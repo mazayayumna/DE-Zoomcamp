@@ -327,3 +327,141 @@ MapPartition is like map, but it is a function that process not whole but per pa
 
 4) Turn the result to Spark DF and drop column named `index`. Then we can see the predicted duration.
 > note: our partition is not super balanced and repartitioning is an expensive operation.
+
+
+# Running Spark in the Cloud
+
+### Connecting to Google Cloud Storage
+***Steps***:
+1) Duplicate `4_spark_sql` to `7_spark_gcs` and upload parquet files `week5/notebooks/data/pq` to GCS.
+```
+gcloud auth login 		#login to prevent access denied
+gsutil -m cp -r pq/ gs://data-lake_ny-rides-mazaya/pq
+```
+2) Download Google Cloud Storage connector so we can connect our local spark with GCS.
+```
+mkdir lib #pwd in week5/notebooks
+cd lib
+gsutil cp gs://hadoop-lib/gcs/gcs-connector-hadoop3-2.2.5.jar .
+```
+3) Make Spark Session and its Context with our google credentials and connector. Build!
+4) Read the green parquet file with Spark DF and check show() and count() to see if it works.
+
+### Creating a local Spark cluster
+***Steps***:
+1) Shutdown all notebooks first. cd to `week5/spark-3.3.2-bin-hadoop3`.
+
+2) Run this to create a stand-alone cluster:
+```
+./sbin/start-master.sh
+```
+
+3) forward port 8080 to see Spark master, we can see URL there. How to use that
+```
+spark = SparkSession.builder \
+    .master("spark://de-zoomcamp.asia-southeast2-a.c.ny-rides-mazaya.internal:7077") \
+    .appName('test') \
+    .getOrCreate()
+```
+
+4) Create a worker
+```
+./sbin/start-slave.sh spark://de-zoomcamp.asia-southeast2-a.c.ny-rides-mazaya.internal:7077
+```
+
+5) From spark directory, back to notebooks directory and convert `4_spark_sql` from notebook to python script.
+```
+jupyter nbconvert --to=script 4_spark_sql.ipynb
+```
+
+6) Edit the python script `4_spark_sql.py`, like add argparser and delete .master.
+> using master("url") in SparkSession is not practical. So we use Spark Submit instead to specify URL.
+
+7) How to run with or without Spark Submit/specify master.
+Before running Spark cluster, make sure to see spark master in `localhost:8080` doesnt gave running application.
+```
+python 4_spark_sql.py \
+    --input_green=data/pq/green/2020/*/ \
+    --input_yellow=data/pq/yellow/2020/*/ \
+    --output=data/report-2020
+
+
+URL="spark://de-zoomcamp.asia-southeast2-a.c.ny-rides-mazaya.internal:7077"
+spark-submit \
+    --master="${URL}" \
+    4_spark_sql.py \
+        --input_green=data/pq/green/2021/*/ \
+        --input_yellow=data/pq/yellow/2021/*/ \
+        --output=data/report-2021
+```
+
+8) Lastly, stop the master and executor after finished in Spark directory `cd spark-3.3.2-bin-hadoop3`.
+```
+./sbin/stop-slave.sh
+./sbin/stop-master.sh
+```
+
+
+### Setting up a Dataproc Cluster
+Similar to Spark Submit before but we use Web UI to submit a job to dataports.
+
+***Steps***:
+1) Log in to GCP and earch for dataproc. Enable the API.
+
+2) Create cluster on compute engine.
+> name de-zoomcamp-cluster, asia-southeast2 (same as GCS), single node, tick on Jupyter and Docker (not used tho), in network internal API should go False, rest go with default.
+
+3) upload script to GCS
+```
+gsutil cp 4_spark_sql.py gs://data-lake_ny-rides-mazaya/code/
+```
+
+4) In Cluster, submit job. Jobtype is pyspark, main python file is gs://data-lake_ny-rides-mazaya/code/4_spark_sql.py, arguments is:
+```
+--input_green=gs://data-lake_ny-rides-mazaya/pq/green/2021/*/
+--input_yellow=gs://data-lake_ny-rides-mazaya/pq/yellow/2021/*/
+--output=gs://data-lake_ny-rides-mazaya/reports-2021
+```
+
+5) Then submit, make sure its repaired and succeeded. You can see the output in GCS.
+> we did it via web UI, it can be via Cloud SDK and RestAPI.
+
+
+
+### Submit job with Google Cloud SDK
+Similar to Spark Submit before but we use Cloud CLI to submit a job to dataports.
+
+***Steps***:
+1) Go to IAM, for `@ny-rides-mazaya.iam.gserviceaccount.com` edit its principal, add Dataproc Administrator role.
+
+2) run this command in our VM/local terminal in notebooks directory as example.
+```
+gcloud dataproc jobs submit pyspark \
+    --cluster=de-zoomcamp-cluster \
+    --region=asia-southeast2 \
+    gs://data-lake_ny-rides-mazaya/code/4_spark_sql.py \
+    -- \
+        --input_green=gs://data-lake_ny-rides-mazaya/pq/green/2020/*/ \
+        --input_yellow=gs://data-lake_ny-rides-mazaya/pq/yellow/2020/*/ \
+        --output=gs://data-lake_ny-rides-mazaya/reports-2020
+```
+
+
+### Connecting Spark to BigQuery
+Similar to Spark Submit before but we use Cloud CLI to submit a job to dataports and save it to BigQuery instead Google Cloud Storage.
+
+***Steps***:
+1) Duplicate `4_spark_sql.py` to `4_spark_big_query.py`. Edit thing like write result to BigQuery and set temporaryGcsBucket too (this thing is dataproc temp bucket in GCS).
+
+2) upload script to GCS
+```
+gsutil cp 4_spark_big_query.py gs://data-lake_ny-rides-mazaya/code/
+```
+
+3) run this command like before
+```
+gcloud dataproc jobs submit pyspark     --cluster=de-zoomcamp-cluster     --region=asia-southeast2     gs://data-lake_ny-rides-mazaya/code/4_spark_big_query.py     --         --input_green=gs://data-lake_ny-rides-mazaya/pq/green/2020/*/         --input_yellow=gs://data-lake_ny-rides-mazaya/pq/yellow/2020/*/         --output=trips_data_all.report_2020
+```
+
+4) Final result:
+![bigquery_result](bigquery_result.jpg)
